@@ -14,7 +14,7 @@ int animation_time = animation_duration;
 
 Tile::Tile(QColor color, View* view, QGraphicsItem* parent)
     : color_(color), piece_(nullptr), m_view(view) {
-    setAcceptHoverEvents(true);
+    //setAcceptHoverEvents(true);
 }
 
 QRectF Tile::boundingRect() const{
@@ -54,7 +54,7 @@ chess::BoardLocation Tile::getLocation(){
 Piece::Piece(QChar piece, chess::Color color, QGraphicsItem* parent)
     : QGraphicsObject(parent), piece_(piece), color_(color){
     setZValue(1);
-    setCursor(Qt::OpenHandCursor);
+    //setCursor(Qt::OpenHandCursor);
     moveCount = new QGraphicsSimpleTextItem(this);
     QFont font = moveCount->font();
     font.setPointSize(20);  // Set to your desired size

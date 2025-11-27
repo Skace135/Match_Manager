@@ -4,7 +4,10 @@
 #include <QGraphicsRectItem>
 #include <QObject>
 #include <qbrush.h>
+#include <qevent.h>
+#include <qlabel.h>
 #include "board.h"
+#include <algorithm>
 
 namespace gui{
 
@@ -63,6 +66,25 @@ protected:
 private:
     QColor color_;
     View* m_view;
+};
+
+class ScaledLabel : public QLabel
+{
+    Q_OBJECT
+public:
+    using QLabel::QLabel;
+
+protected:
+    void resizeEvent(QResizeEvent *event) override {
+        QLabel::resizeEvent(event);
+
+        int h = event->size().height();
+        int newSize = h*0.25;
+
+        QFont f = font();
+        f.setPointSize(newSize);
+        setFont(f);
+    }
 };
 
 }

@@ -2,8 +2,11 @@
 #include "search.h"
 #include <QPropertyAnimation>
 #include <QTimer>
+#include <QGraphicsWidget>
 #include <QKeyEvent>
+#include <iostream>
 #include <qgraphicssceneevent.h>
+#include <QGraphicsProxyWidget>
 #include <thread>
 #include <bitset>
 #include <sstream>
@@ -319,5 +322,103 @@ void View::addPromotionAnimation(Tile* from, Tile* to, chess::Piece piece, chess
     });
 }
 
+StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
+    scene = new QGraphicsScene(this);
+    setScene(scene);
+    setRenderHint(QPainter::Antialiasing);
+
+    //Container for scene
+    QGraphicsWidget* formContainer = new QGraphicsWidget();
+    scene->addItem(formContainer);
+
+    //Add verrtical layout
+    vLayout = new QGraphicsLinearLayout(Qt::Vertical);
+    formContainer->setLayout(vLayout);
+
+    QGraphicsLinearLayout* titleRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* matchupRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* scoreRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* gameNumRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* timeRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* gamesRow = new QGraphicsLinearLayout(Qt::Horizontal);
+
+    QLabel *titleLabel = new QLabel("Match Manager");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; background-color: white; padding: 5px; }");
+    titleRow->addItem(scene->addWidget(titleLabel));
+
+    e1_label = new QLabel("?");
+    e1_label->setStyleSheet("QLabel { font-weight: bold; font-size: 18px; color: lime; padding: 5px; }");
+    e2_label = new QLabel("?");
+    e2_label->setStyleSheet("QLabel { font-weight: bold; font-size: 18px; color: lime; padding: 5px; }");
+    matchupRow->addItem(scene->addWidget(e1_label));
+    matchupRow->addItem(scene->addWidget(new QLabel("  VS  ")));
+    matchupRow->addItem(scene->addWidget(e2_label));
+
+
+    e1Score_label = new QLabel("---");
+    e1Score_label->setStyleSheet("QLabel { font-weight: bold; font-size: 16px; color: violet; padding: 5px; }");
+    e2Score_label = new QLabel("---");
+    e2Score_label->setStyleSheet("QLabel { font-weight: bold; font-size: 16px; color: violet; padding: 5px; }");
+    QLabel* sepLabel = new QLabel("  -  ");
+    sepLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 16px; padding: 5px; }");
+    scoreRow->addItem(scene->addWidget(e1Score_label));
+    scoreRow->addItem(scene->addWidget(sepLabel));
+    scoreRow->addItem(scene->addWidget(e2Score_label));
+
+    gameNumber_label = new QLabel(QString::number(game_number));
+    maxGames_label = new QLabel(QString::number(max_games));
+    gameNumRow->addItem(scene->addWidget(new QLabel("Game ")));
+    gameNumRow->addItem(scene->addWidget(gameNumber_label));
+    gameNumRow->addItem(scene->addWidget(new QLabel("/")));
+    gameNumRow->addItem(scene->addWidget(maxGames_label));
+
+    // Create input widget (QLineEdit) as proxy
+    timeEdit = new QLineEdit;
+    timeEdit->setText(QString::number(think_time));
+    timeEdit->setMaximumWidth(75);
+
+    timeRow->addItem(scene->addWidget(new QLabel("Think time (ms)")));
+    timeRow->addItem(scene->addWidget(timeEdit));
+
+    gamesEdit = new QLineEdit;
+    gamesEdit->setText(QString::number(max_games));
+    gamesEdit->setMaximumWidth(75);
+
+    connect(timeEdit,  &QLineEdit::editingFinished, this, &StatsView::onTimeEditFinished);
+    connect(gamesEdit,  &QLineEdit::editingFinished, this, &StatsView::onGamesEditFinished);
+
+    gamesRow->addItem(scene->addWidget(new QLabel("Num games     ")));
+    gamesRow->addItem(scene->addWidget(gamesEdit));
+
+
+    // Add row to form
+    vLayout->addItem(titleRow);
+    vLayout->addItem(matchupRow);
+    vLayout->addItem(scoreRow);
+    vLayout->setItemSpacing(2, 50);
+    vLayout->addItem(gameNumRow);
+    vLayout->setItemSpacing(2, 30);
+    vLayout->addItem(timeRow);
+    vLayout->addItem(gamesRow);
+
+
+}
+
+void StatsView::resizeEvent(QResizeEvent *event){
+    QGraphicsView::resizeEvent(event);
+    fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void StatsView::onTimeEditFinished(){
+    QString text = timeEdit->text();
+    think_time = text.toInt();
+}
+
+void StatsView::onGamesEditFinished(){
+    QString text = gamesEdit->text();
+    max_games = text.toInt();
+    maxGames_label->setText(text);
+}
 
 }
