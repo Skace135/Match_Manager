@@ -9,7 +9,6 @@
 #include "board.h"
 #include "gui.h"
 
-#endif // VIEW_H
 namespace gui {
 
 constexpr int boardSize = 14;
@@ -71,3 +70,4 @@ private:
 };
 
 }
+#endif // VIEW_H

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "view.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -19,5 +20,9 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    gui::View* view;
+    gui::StatsView* statsView;
+
+    void setup();
 };
 #endif // MAINWINDOW_H
