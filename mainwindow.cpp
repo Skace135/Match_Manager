@@ -5,6 +5,7 @@
 #include <qlabel.h>
 #include <QGroupBox>
 #include <QFormLayout>
+#include "match_manager.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -28,6 +29,9 @@ void MainWindow::setup(){
     view->setupFromFen(s);
 
     statsView = new gui::StatsView(splitter);
+
+    matchManager = new MatchManager(statsView, view);
+
 
     splitter->addWidget(statsView);
     splitter->addWidget(view);

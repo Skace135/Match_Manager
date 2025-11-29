@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "view.h"
+#include "match_manager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,6 +23,7 @@ private:
     Ui::MainWindow *ui;
     gui::View* view;
     gui::StatsView* statsView;
+    MatchManager* matchManager;
 
     void setup();
 };

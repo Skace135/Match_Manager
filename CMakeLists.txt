@@ -28,6 +28,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         board.h
         view.h
         view.cpp
+        engineProcess.h
+        engineProcess.cpp
+        match_manager.h
+        match_manager.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

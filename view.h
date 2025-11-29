@@ -5,9 +5,12 @@
 #include <QGraphicsScene>
 #include <QGraphicsLinearLayout>
 #include <QLineEdit>
+#include <QPushButton>
 #include <utility>
 #include "board.h"
 #include "gui.h"
+
+class MatchManager;
 
 namespace gui {
 
@@ -43,6 +46,7 @@ class StatsView : public QGraphicsView {
     Q_OBJECT
 public:
     StatsView(QWidget *parent = nullptr);
+    MatchManager* mm = nullptr;
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -50,8 +54,12 @@ protected:
 private slots:
     void onTimeEditFinished();
     void onGamesEditFinished();
+    void on_e1ButtonClicked();
+    void on_e2ButtonClicked();
 
 private:
+    void addPlayerRows();
+    void addMatchupRows();
     QGraphicsScene *scene;
     QGraphicsLinearLayout* vLayout;
     QLabel* e1_label;
@@ -62,6 +70,10 @@ private:
     QLabel* maxGames_label;
     QLineEdit* timeEdit;
     QLineEdit* gamesEdit;
+    QLabel* e1_edit;
+    QLabel* e2_edit;
+    QPushButton* e1_browseButton;
+    QPushButton* e2_browseButton;
     double e1Score = 0;
     double e2Score = 0;
     int game_number=0;

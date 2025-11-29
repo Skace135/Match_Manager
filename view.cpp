@@ -7,9 +7,12 @@
 #include <iostream>
 #include <qgraphicssceneevent.h>
 #include <QGraphicsProxyWidget>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <thread>
 #include <bitset>
 #include <sstream>
+#include "match_manager.h"
 
 /*TODO
  * Try out move ordering with SEE
@@ -336,7 +339,6 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     formContainer->setLayout(vLayout);
 
     QGraphicsLinearLayout* titleRow = new QGraphicsLinearLayout(Qt::Horizontal);
-    QGraphicsLinearLayout* matchupRow = new QGraphicsLinearLayout(Qt::Horizontal);
     QGraphicsLinearLayout* scoreRow = new QGraphicsLinearLayout(Qt::Horizontal);
     QGraphicsLinearLayout* gameNumRow = new QGraphicsLinearLayout(Qt::Horizontal);
     QGraphicsLinearLayout* timeRow = new QGraphicsLinearLayout(Qt::Horizontal);
@@ -346,15 +348,6 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; background-color: white; padding: 5px; }");
     titleRow->addItem(scene->addWidget(titleLabel));
-
-    e1_label = new QLabel("?");
-    e1_label->setStyleSheet("QLabel { font-weight: bold; font-size: 18px; color: lime; padding: 5px; }");
-    e2_label = new QLabel("?");
-    e2_label->setStyleSheet("QLabel { font-weight: bold; font-size: 18px; color: lime; padding: 5px; }");
-    matchupRow->addItem(scene->addWidget(e1_label));
-    matchupRow->addItem(scene->addWidget(new QLabel("  VS  ")));
-    matchupRow->addItem(scene->addWidget(e2_label));
-
 
     e1Score_label = new QLabel("---");
     e1Score_label->setStyleSheet("QLabel { font-weight: bold; font-size: 16px; color: violet; padding: 5px; }");
@@ -394,15 +387,79 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
 
     // Add row to form
     vLayout->addItem(titleRow);
-    vLayout->addItem(matchupRow);
+    addMatchupRows();
     vLayout->addItem(scoreRow);
-    vLayout->setItemSpacing(2, 50);
-    vLayout->addItem(gameNumRow);
     vLayout->setItemSpacing(2, 30);
+    vLayout->addItem(gameNumRow);
+    vLayout->setItemSpacing(0, 20);
     vLayout->addItem(timeRow);
     vLayout->addItem(gamesRow);
+    addPlayerRows();
+}
+
+void StatsView::addMatchupRows(){
+    QGraphicsLinearLayout* matchupRow = new QGraphicsLinearLayout(Qt::Horizontal);
+
+    e1_label = new QLabel("?");
+    e1_label->setStyleSheet("QLabel { font-weight: bold; color: lime; padding: 0px; }");
+    QFont f = e1_label->font();
+    f.setPointSize(18);
+    e1_label->setFont(f);
+    e1_label->setAlignment(Qt::AlignCenter);
+
+    e2_label = new QLabel("?");
+    e2_label->setStyleSheet("QLabel { font-weight: bold; color: lime; padding: 0px}");
+    e2_label->setFont(f);
+    e2_label->setAlignment(Qt::AlignCenter);
+    matchupRow->addItem(scene->addWidget(e1_label));
+    QLabel* vsLabel = new QLabel("  VS  ");
+    vsLabel->setMaximumWidth(15);
+    vsLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    vsLabel->setAlignment(Qt::AlignCenter);
+    matchupRow->addItem(scene->addWidget(vsLabel));
+    matchupRow->addItem(scene->addWidget(e2_label));
+
+    vLayout->addItem(matchupRow);
+}
+
+void StatsView::addPlayerRows(){
+    QGraphicsLinearLayout* playersRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* e1_row = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* e2_row = new QGraphicsLinearLayout(Qt::Horizontal);
+
+    QLabel* playersLabel = new QLabel("Players");
+    playersLabel->setAlignment(Qt::AlignLeft);
+    playersLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; padding: 5px; }");
+    playersRow->addItem(scene->addWidget(playersLabel));
+
+    //Not an edit anymore
+    e1_edit = new QLabel("Not selected");
+    e1_edit->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    e1_edit->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    e1_browseButton = new QPushButton("Load");
+    QFont f = e1_browseButton->font();
+    f.setPointSize(7);
+    e1_browseButton->setFont(f);
+    e1_browseButton->setMaximumWidth(45);
+    e1_row->addItem(scene->addWidget(e1_edit));
+    e1_row->addItem(scene->addWidget(e1_browseButton));
+
+    e2_edit = new QLabel("Not selected");
+    e2_edit->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    e2_edit->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    e2_browseButton = new QPushButton("Load");
+    e2_browseButton->setFont(f);
+    e2_browseButton->setMaximumWidth(45);
+    e2_row->addItem(scene->addWidget(e2_edit));
+    e2_row->addItem(scene->addWidget(e2_browseButton));
+
+    connect(e1_browseButton, &QPushButton::clicked, this, &StatsView::on_e1ButtonClicked);
+    connect(e2_browseButton, &QPushButton::clicked, this, &StatsView::on_e2ButtonClicked);
 
 
+    vLayout->addItem(playersRow);
+    vLayout->addItem(e1_row);
+    vLayout->addItem(e2_row);
 }
 
 void StatsView::resizeEvent(QResizeEvent *event){
@@ -419,6 +476,58 @@ void StatsView::onGamesEditFinished(){
     QString text = gamesEdit->text();
     max_games = text.toInt();
     maxGames_label->setText(text);
+}
+
+void StatsView::on_e1ButtonClicked(){
+    QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly)){
+        QMessageBox::critical(this, "Error", file.errorString());
+        return;
+    }
+    if(mm){
+        QFont f = e1_edit->font();
+        f.setPointSize(6);
+        e1_edit->setFont(f);
+        e1_edit->setText(path);
+        mm->e1_path = path.toStdString();
+        QString baseName = QFileInfo(path).baseName();
+        e1_label->setText(baseName);
+        f = e1_label->font();
+        f.setPointSize(8);
+        e1_label->setFont(f);
+        e1_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Match Manager not existant");
+        return;
+    }
+}
+
+void StatsView::on_e2ButtonClicked(){
+    QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly)){
+        QMessageBox::critical(this, "Error", file.errorString());
+        return;
+    }
+    if(mm){
+        QFont f = e2_edit->font();
+        f.setPointSize(6);
+        e2_edit->setFont(f);
+        e2_edit->setText(path);
+        mm->e2_path = path.toStdString();
+        QString baseName = QFileInfo(path).baseName();
+        e2_label->setText(baseName);
+        f = e2_label->font();
+        f.setPointSize(8);
+        e2_label->setFont(f);
+        e2_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Match Manager not existant");
+        return;
+    }
 }
 
 }
