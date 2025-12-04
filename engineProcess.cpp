@@ -1,65 +1,31 @@
 #include "engineProcess.h"
 #include <iostream>
+#include "qDebug.h"
 
-bool EngineProcess::start(const std::string& path) {
-    SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
-    HANDLE inRead, outWrite;
+EngineProcess::EngineProcess(QObject* parent)
+    : QObject(parent), process_(new QProcess(this))
+{
+    connect(process_, &QProcess::readyReadStandardOutput,
+            this, &EngineProcess::handleReadyRead);
 
-    // Parent writes -> engine stdin
-    CreatePipe(&inRead, &inWrite, &sa, 0);
-    SetHandleInformation(inWrite, HANDLE_FLAG_INHERIT, 0);
+}
 
-    // Engine stdout -> parent reads
-    CreatePipe(&outRead, &outWrite, &sa, 0);
-    SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
+void EngineProcess::start(const QString& path)
+{
+    process_->start(path);
+}
 
-    STARTUPINFOA si = { sizeof(si) };
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdInput = inRead;
-    si.hStdOutput = outWrite;
-    si.hStdError = outWrite;
-
-    if (!CreateProcessA(
-            NULL,
-            (LPSTR)path.c_str(),
-            NULL, NULL, TRUE,
-            0, NULL, NULL, &si, &pi))
-    {
-        return false;
+void EngineProcess::send(const QString& command)
+{
+    if(process_->state() == QProcess::Running) {
+        process_->write((command + "\n").toUtf8());
     }
-
-    CloseHandle(inRead);
-    CloseHandle(outWrite);
-
-    running = true;
-    return true;
 }
 
-void EngineProcess::send(const std::string& cmd) {
-    std::string c = cmd + "\n";
-    DWORD written;
-    WriteFile(inWrite, c.c_str(), (DWORD)c.size(), &written, NULL);
-}
-
-std::string EngineProcess::readLine() {
-    char ch;
-    DWORD read;
-    std::string line;
-
-    while (true) {
-        if (!ReadFile(outRead, &ch, 1, &read, NULL) || read == 0)
-            break;
-        if (ch == '\n') break;
-        line += ch;
-    }
-    return line;
-}
-
-void EngineProcess::stop() {
-    if (running) {
-        TerminateProcess(pi.hProcess, 0);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        running = false;
+void EngineProcess::handleReadyRead()
+{
+    while(process_->canReadLine()) {
+        QByteArray line = process_->readLine();
+        emit outputReady(QString::fromUtf8(line).trimmed());
     }
 }

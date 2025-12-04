@@ -12,6 +12,7 @@
 #include <thread>
 #include <bitset>
 #include <sstream>
+#include <QPointer>
 #include "match_manager.h"
 
 /*TODO
@@ -119,6 +120,7 @@ void View::setup(chess::Square board[boardSize][boardSize]){
 
 void View::setupFromFen(const std::string& fen) {
     scene->clear();
+
     std::string header = fen.substr(0,36);
     std::string body = fen.substr(36, fen.size()-36);
 
@@ -297,6 +299,7 @@ void View::movePieces(chess::Move move){
 
 void View::addAnimation(Tile* from, Tile* to){
     QPropertyAnimation *a = new QPropertyAnimation(from->piece_, "pos");
+    //BUG
     a->setStartValue(from->piece_->pos());
     a->setEndValue(to->pos());
     a->setDuration(animation_time);
@@ -305,9 +308,13 @@ void View::addAnimation(Tile* from, Tile* to){
     Piece* t = to->piece_;
     to->piece_ = from->piece_;
     from->piece_ = nullptr;
-    QTimer::singleShot(animation_time, this, [=](){
-        if(t)delete t;
+    QPointer<Piece> temp = t;
+    QTimer::singleShot(animation_time, [temp]() {
+        if (temp) temp->deleteLater();   // SAFE: temp becomes nullptr if deleted earlier
     });
+    /*QTimer::singleShot(animation_time, this, [=](){
+        if(t)t->deleteLater();
+    });*/
 }
 
 void View::addPromotionAnimation(Tile* from, Tile* to, chess::Piece piece, chess::Color color){
@@ -319,10 +326,15 @@ void View::addPromotionAnimation(Tile* from, Tile* to, chess::Piece piece, chess
     Piece* t = to->piece_;
     to->piece_ = from->piece_;
     from->piece_ = nullptr;
-    QTimer::singleShot(animation_time, this, [=]() {
-        if(t) delete t;
-        if(to->piece_)to->piece_->setSymbol(piece_symbol[piece]);
+    QPointer<Piece> temp = t;
+    QPointer<Piece> temp2 = to->piece_;
+    QTimer::singleShot(animation_time, [temp, piece, temp2]() {
+        if (temp) temp->deleteLater();   // SAFE: temp becomes nullptr if deleted earlier
+        if(temp2)temp2->setSymbol(piece_symbol[piece]);
     });
+    /*QTimer::singleShot(animation_time, this, [=]() {
+        if(t) t->deleteLater();
+    });*/
 }
 
 StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
@@ -389,12 +401,23 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     vLayout->addItem(titleRow);
     addMatchupRows();
     vLayout->addItem(scoreRow);
-    vLayout->setItemSpacing(2, 30);
+    addMatchButtonRow();
+    vLayout->setItemSpacing(3, 30);
     vLayout->addItem(gameNumRow);
     vLayout->setItemSpacing(0, 20);
     vLayout->addItem(timeRow);
     vLayout->addItem(gamesRow);
     addPlayerRows();
+
+    fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void StatsView::addMatchButtonRow(){
+    QGraphicsLinearLayout* matchButtonRow = new QGraphicsLinearLayout(Qt::Horizontal);
+    matchButton = new QPushButton("Start Match");
+    matchButton->setStyleSheet("QPushButton { font-weight: bold; font-size: 14px; color: cyan; }");
+    connect(matchButton, &QPushButton::clicked, this, &StatsView::onMatchButtonClicked);
+    vLayout->addItem(scene->addWidget(matchButton));
 }
 
 void StatsView::addMatchupRows(){
@@ -460,6 +483,45 @@ void StatsView::addPlayerRows(){
     vLayout->addItem(playersRow);
     vLayout->addItem(e1_row);
     vLayout->addItem(e2_row);
+
+    QGraphicsLinearLayout* RY_row = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* BG_row = new QGraphicsLinearLayout(Qt::Horizontal);
+
+
+    RY_label = new QLabel("");
+    BG_label = new QLabel("");
+    QLabel* ry = new QLabel("RY: ");
+    ry->setMaximumWidth(30);
+    QLabel* bg = new QLabel("BG: ");
+    bg->setMaximumWidth(30);
+
+    RY_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    BG_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    ry->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    bg->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+
+    RY_row->addItem(scene->addWidget(ry));
+    RY_row->addItem(scene->addWidget(RY_label));
+
+    BG_row->addItem(scene->addWidget(bg));
+    BG_row->addItem(scene->addWidget(BG_label));
+
+    vLayout->addItem(RY_row);
+    vLayout->addItem(BG_row);
+}
+
+void StatsView::setPlayerLabels(QString e1_name, QString e2_name){
+    RY_label->setText(e1_name);
+    BG_label->setText(e2_name);
+}
+
+void StatsView::modifyEngineNames(QString e1_name, QString e2_name){
+    e1_label->setText(e1_name);
+    e2_label->setText(e2_name);
+}
+
+void StatsView::updateGameNumber(int gameNumber){
+    gameNumber_label->setText(QString::number(gameNumber));
 }
 
 void StatsView::resizeEvent(QResizeEvent *event){
@@ -490,9 +552,10 @@ void StatsView::on_e1ButtonClicked(){
         f.setPointSize(6);
         e1_edit->setFont(f);
         e1_edit->setText(path);
-        mm->e1_path = path.toStdString();
+        mm->e1_path = path;
         QString baseName = QFileInfo(path).baseName();
         e1_label->setText(baseName);
+        mm->e1_name = baseName;
         f = e1_label->font();
         f.setPointSize(8);
         e1_label->setFont(f);
@@ -516,8 +579,9 @@ void StatsView::on_e2ButtonClicked(){
         f.setPointSize(6);
         e2_edit->setFont(f);
         e2_edit->setText(path);
-        mm->e2_path = path.toStdString();
+        mm->e2_path = path;
         QString baseName = QFileInfo(path).baseName();
+        mm->e2_name = baseName;
         e2_label->setText(baseName);
         f = e2_label->font();
         f.setPointSize(8);
@@ -528,6 +592,21 @@ void StatsView::on_e2ButtonClicked(){
         QMessageBox::critical(this, "Error", "Match Manager not existant");
         return;
     }
+}
+
+void StatsView::onMatchButtonClicked(){
+    if(e1_label->text() == "?" || e2_label->text() == "?"){
+        QMessageBox::critical(this, "Error", "Engines not loaded");
+        return;
+    }
+    mm->run();
+}
+
+void StatsView::updateResults(double e1Points, double e2Points){
+    e1Score += e1Points;
+    e2Score += e2Points;
+    e1Score_label->setText(QString::number(e1Score));
+    e2Score_label->setText(QString::number(e2Score));
 }
 
 }

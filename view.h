@@ -47,6 +47,12 @@ class StatsView : public QGraphicsView {
 public:
     StatsView(QWidget *parent = nullptr);
     MatchManager* mm = nullptr;
+    void setPlayerLabels(QString e1_name, QString e2_name);
+    void modifyEngineNames(QString e1_name, QString e2_name);
+    void updateResults(double e1Points, double e2Points);
+    void updateGameNumber(int gameNumber);
+    int max_games = 100;
+    int think_time = 2500;
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -56,10 +62,12 @@ private slots:
     void onGamesEditFinished();
     void on_e1ButtonClicked();
     void on_e2ButtonClicked();
+    void onMatchButtonClicked();
 
 private:
     void addPlayerRows();
     void addMatchupRows();
+    void addMatchButtonRow();
     QGraphicsScene *scene;
     QGraphicsLinearLayout* vLayout;
     QLabel* e1_label;
@@ -72,13 +80,14 @@ private:
     QLineEdit* gamesEdit;
     QLabel* e1_edit;
     QLabel* e2_edit;
+    QLabel* RY_label;
+    QLabel* BG_label;
+    QPushButton* matchButton;
     QPushButton* e1_browseButton;
     QPushButton* e2_browseButton;
     double e1Score = 0;
     double e2Score = 0;
     int game_number=0;
-    int max_games = 100;
-    int think_time = 2500;
 };
 
 }

@@ -185,6 +185,7 @@ public:
         data = ((((uint8_t) m) << 1)
                 | (((uint8_t) p) << 3)) + 1;
     }
+    Move(int fr, int fc, int tr, int tc, uint8_t data_): from(BoardLocation(fr, fc)), to(BoardLocation(tr, tc)), data(data_) {}
     Move(BoardLocation f, BoardLocation t, bool earlyCheck, bool lateCheck): from(f), to(t) {
         data = ((((uint8_t) earlyCheck)<<5)
                 | ((uint8_t) lateCheck<<6));

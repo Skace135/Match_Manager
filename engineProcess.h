@@ -1,17 +1,23 @@
-// EngineProcess.h
+// engineProcess.h
 #pragma once
-#include <windows.h>
-#include <string>
+#include <QProcess>
+#include <QObject>
 
-class EngineProcess {
+class EngineProcess : public QObject
+{
+    Q_OBJECT
 public:
-    HANDLE inWrite = NULL;
-    HANDLE outRead = NULL;
-    PROCESS_INFORMATION pi = {};
-    bool running = false;
+    EngineProcess(QObject* parent = nullptr);
 
-    bool start(const std::string& path);
-    void send(const std::string& cmd);
-    std::string readLine();
-    void stop();
+    void start(const QString& path);
+    void send(const QString& command);
+
+signals:
+    void outputReady(const QString& line);
+
+private slots:
+    void handleReadyRead();
+
+private:
+    QProcess* process_;
 };
