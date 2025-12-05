@@ -126,6 +126,7 @@ void MatchManager::onEngine1Output(const QString& line){
     }
     if(m_moveCount >= maxMoveCount){
         terminateGame(m_e1Eval, m_e2Eval);
+        return;
     }
     timer.start();
     e2->send("Go");
@@ -147,6 +148,7 @@ void MatchManager::onEngine2Output(const QString& line){
     }
     if(m_moveCount >= maxMoveCount){
         terminateGame(m_e1Eval, m_e2Eval);
+        return;
     }
     timer.start();
     e1->send("Go");

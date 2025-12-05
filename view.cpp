@@ -299,7 +299,6 @@ void View::movePieces(chess::Move move){
 
 void View::addAnimation(Tile* from, Tile* to){
     QPropertyAnimation *a = new QPropertyAnimation(from->piece_, "pos");
-    //BUG
     a->setStartValue(from->piece_->pos());
     a->setEndValue(to->pos());
     a->setDuration(animation_time);
