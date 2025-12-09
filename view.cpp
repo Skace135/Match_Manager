@@ -15,32 +15,6 @@
 #include <QPointer>
 #include "match_manager.h"
 
-/*TODO
- * Try out move ordering with SEE
- * Implement arrows
- * (Optional) increase arrowhead width
- * */
-
-/*FIXES:
- * King capture while checked
- * King check pin bug
- */
-
-
-/*  zvalues: tile: 0
- *           piece: 1
- *           arrow: 2 (set inside arrow class)
- */
-
-/*  Debugging options:
- *  -show legal moves: set d_legalMoves = true
- *  -show number of pseudolegal moves: set d_pseudoMoveCount = true*/
-
-/*  BUGS:
- *  Crashes sometimes when green mated but blues turn as move isnt set then
- *  Process crashes sometimes
- *  Castling not possible during game
- */
 
 namespace gui {
 
@@ -49,7 +23,8 @@ std::chrono::duration<double> totalElapsed2=(std::chrono::duration<double>)0;
 std::chrono::duration<double> totalSelfPlayElapsed=(std::chrono::duration<double>)0;
 int moveCounter = 0;
 
-View::View(QWidget *parent) : QGraphicsView(parent) {
+View::View(int n, QWidget *parent) : QGraphicsView(parent) {
+    number = n;
     scene = new QGraphicsScene(this);
     scene->setSceneRect(0, 0, squareSize * 14, squareSize * 14); // Set your desired width and height
     setScene(scene);
@@ -63,6 +38,7 @@ View::View(QWidget *parent) : QGraphicsView(parent) {
         }
     }
     setup(board);
+    for(int i=0; i<4; i++) hl_tiles[i].first = hl_tiles[i].second = nullptr;
 }
 
 
@@ -120,6 +96,14 @@ void View::setup(chess::Square board[boardSize][boardSize]){
 
 void View::setupFromFen(const std::string& fen) {
     scene->clear();
+
+    QGraphicsSimpleTextItem* simpleNumber = new QGraphicsSimpleTextItem(QString::number(number));
+    simpleNumber->setPos(0, 0);
+    simpleNumber->setFont(QFont("Arial", 50));
+    simpleNumber->setBrush(Qt::blue);
+
+    scene->addItem(simpleNumber);
+    for(int i=0; i<4; i++) hl_tiles[i].first = hl_tiles[i].second = nullptr;
 
     std::string header = fen.substr(0,36);
     std::string body = fen.substr(36, fen.size()-36);
@@ -341,6 +325,9 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     setScene(scene);
     setRenderHint(QPainter::Antialiasing);
 
+    gridContainer = new QWidget();
+    grid = new QGridLayout(gridContainer);
+
     //Container for scene
     QGraphicsWidget* formContainer = new QGraphicsWidget();
     scene->addItem(formContainer);
@@ -370,7 +357,7 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     scoreRow->addItem(scene->addWidget(sepLabel));
     scoreRow->addItem(scene->addWidget(e2Score_label));
 
-    gameNumber_label = new QLabel(QString::number(game_number));
+    gameNumber_label = new QLabel(QString::number(game_number) + "  ");
     maxGames_label = new QLabel(QString::number(max_games));
     gameNumRow->addItem(scene->addWidget(new QLabel("Game ")));
     gameNumRow->addItem(scene->addWidget(gameNumber_label));
@@ -380,19 +367,28 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     // Create input widget (QLineEdit) as proxy
     timeEdit = new QLineEdit;
     timeEdit->setText(QString::number(think_time));
-    timeEdit->setMaximumWidth(75);
+    timeEdit->setMaximumWidth(editWidth);
 
-    timeRow->addItem(scene->addWidget(new QLabel("Think time (ms)")));
+    QWidget* tp;
+    tp = new QLabel("Think time (ms):");
+    uiElements.push_back(tp);
+
+    timeRow->addItem(scene->addWidget(tp));
     timeRow->addItem(scene->addWidget(timeEdit));
 
     gamesEdit = new QLineEdit;
     gamesEdit->setText(QString::number(max_games));
-    gamesEdit->setMaximumWidth(75);
+    gamesEdit->setMaximumWidth(editWidth);
 
     connect(timeEdit,  &QLineEdit::editingFinished, this, &StatsView::onTimeEditFinished);
     connect(gamesEdit,  &QLineEdit::editingFinished, this, &StatsView::onGamesEditFinished);
 
-    gamesRow->addItem(scene->addWidget(new QLabel("Num games     ")));
+    uiElements.push_back(timeEdit);
+    uiElements.push_back(gamesEdit);
+
+    tp = new QLabel("Num games:     ");
+    uiElements.push_back(tp);
+    gamesRow->addItem(scene->addWidget(tp));
     gamesRow->addItem(scene->addWidget(gamesEdit));
 
 
@@ -406,15 +402,21 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     vLayout->setItemSpacing(0, 20);
     vLayout->addItem(timeRow);
     vLayout->addItem(gamesRow);
-    addPlayerRows();
+    addEditLine("Concurrent games: ", concurrencyEdit, concurrent_games);
+    addEditLine("Visible games:        ", visibilityEdit, visible_games);
+    addFileRows();
 
     fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+
+    adjustViewNumbers(concurrent_games);
+    connectSlots();
 }
 
 void StatsView::addMatchButtonRow(){
     QGraphicsLinearLayout* matchButtonRow = new QGraphicsLinearLayout(Qt::Horizontal);
     matchButton = new QPushButton("Start Match");
     matchButton->setStyleSheet("QPushButton { font-weight: bold; font-size: 14px; color: cyan; }");
+    uiElements.push_back(matchButton);
     connect(matchButton, &QPushButton::clicked, this, &StatsView::onMatchButtonClicked);
     vLayout->addItem(scene->addWidget(matchButton));
 }
@@ -444,7 +446,7 @@ void StatsView::addMatchupRows(){
     vLayout->addItem(matchupRow);
 }
 
-void StatsView::addPlayerRows(){
+void StatsView::addFileRows(){
     QGraphicsLinearLayout* playersRow = new QGraphicsLinearLayout(Qt::Horizontal);
     QGraphicsLinearLayout* e1_row = new QGraphicsLinearLayout(Qt::Horizontal);
     QGraphicsLinearLayout* e2_row = new QGraphicsLinearLayout(Qt::Horizontal);
@@ -453,6 +455,7 @@ void StatsView::addPlayerRows(){
     playersLabel->setAlignment(Qt::AlignLeft);
     playersLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; padding: 5px; }");
     playersRow->addItem(scene->addWidget(playersLabel));
+    uiElements.push_back(playersLabel);
 
     //Not an edit anymore
     e1_edit = new QLabel("Not selected");
@@ -478,40 +481,15 @@ void StatsView::addPlayerRows(){
     connect(e1_browseButton, &QPushButton::clicked, this, &StatsView::on_e1ButtonClicked);
     connect(e2_browseButton, &QPushButton::clicked, this, &StatsView::on_e2ButtonClicked);
 
+    uiElements.push_back(e1_edit);
+    uiElements.push_back(e2_edit);
+    uiElements.push_back(e1_browseButton);
+    uiElements.push_back(e2_browseButton);
+
 
     vLayout->addItem(playersRow);
     vLayout->addItem(e1_row);
     vLayout->addItem(e2_row);
-
-    QGraphicsLinearLayout* RY_row = new QGraphicsLinearLayout(Qt::Horizontal);
-    QGraphicsLinearLayout* BG_row = new QGraphicsLinearLayout(Qt::Horizontal);
-
-
-    RY_label = new QLabel("");
-    BG_label = new QLabel("");
-    QLabel* ry = new QLabel("RY: ");
-    ry->setMaximumWidth(30);
-    QLabel* bg = new QLabel("BG: ");
-    bg->setMaximumWidth(30);
-
-    RY_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    BG_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    ry->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    bg->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-
-    RY_row->addItem(scene->addWidget(ry));
-    RY_row->addItem(scene->addWidget(RY_label));
-
-    BG_row->addItem(scene->addWidget(bg));
-    BG_row->addItem(scene->addWidget(BG_label));
-
-    vLayout->addItem(RY_row);
-    vLayout->addItem(BG_row);
-}
-
-void StatsView::setPlayerLabels(QString e1_name, QString e2_name){
-    RY_label->setText(e1_name);
-    BG_label->setText(e2_name);
 }
 
 void StatsView::modifyEngineNames(QString e1_name, QString e2_name){
@@ -539,6 +517,19 @@ void StatsView::onGamesEditFinished(){
     maxGames_label->setText(text);
 }
 
+void StatsView::onConcurrencyEditFinished(){
+    QString text = concurrencyEdit->text();
+    concurrent_games = text.toInt();
+    adjustViewNumbers(std::min(concurrent_games, visible_games));
+}
+
+void StatsView::onVisibilityEditFinished(){
+    QString text = visibilityEdit->text();
+    visible_games = text.toInt();
+    adjustViewNumbers(std::min(concurrent_games, visible_games));
+}
+
+
 void StatsView::on_e1ButtonClicked(){
     QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
     QFile file(path);
@@ -546,24 +537,16 @@ void StatsView::on_e1ButtonClicked(){
         QMessageBox::critical(this, "Error", file.errorString());
         return;
     }
-    if(mm){
-        QFont f = e1_edit->font();
-        f.setPointSize(6);
-        e1_edit->setFont(f);
-        e1_edit->setText(path);
-        mm->e1_path = path;
-        QString baseName = QFileInfo(path).baseName();
-        e1_label->setText(baseName);
-        mm->e1_name = baseName;
-        f = e1_label->font();
-        f.setPointSize(8);
-        e1_label->setFont(f);
-        e1_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    }
-    else {
-        QMessageBox::critical(this, "Error", "Match Manager not existant");
-        return;
-    }
+    QFont f = e1_edit->font();
+    f.setPointSize(6);
+    e1_edit->setFont(f);
+    e1_edit->setText(path);
+    QString baseName = QFileInfo(path).baseName();
+    e1_label->setText(baseName);
+    f = e1_label->font();
+    f.setPointSize(8);
+    e1_label->setFont(f);
+    e1_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 }
 
 void StatsView::on_e2ButtonClicked(){
@@ -573,24 +556,16 @@ void StatsView::on_e2ButtonClicked(){
         QMessageBox::critical(this, "Error", file.errorString());
         return;
     }
-    if(mm){
-        QFont f = e2_edit->font();
-        f.setPointSize(6);
-        e2_edit->setFont(f);
-        e2_edit->setText(path);
-        mm->e2_path = path;
-        QString baseName = QFileInfo(path).baseName();
-        mm->e2_name = baseName;
-        e2_label->setText(baseName);
-        f = e2_label->font();
-        f.setPointSize(8);
-        e2_label->setFont(f);
-        e2_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    }
-    else {
-        QMessageBox::critical(this, "Error", "Match Manager not existant");
-        return;
-    }
+    QFont f = e2_edit->font();
+    f.setPointSize(6);
+    e2_edit->setFont(f);
+    e2_edit->setText(path);
+    QString baseName = QFileInfo(path).baseName();
+    e2_label->setText(baseName);
+    f = e2_label->font();
+    f.setPointSize(8);
+    e2_label->setFont(f);
+    e2_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 }
 
 void StatsView::onMatchButtonClicked(){
@@ -598,7 +573,24 @@ void StatsView::onMatchButtonClicked(){
         QMessageBox::critical(this, "Error", "Engines not loaded");
         return;
     }
-    mm->run();
+    if(matches_started){
+        return;
+    }
+    matches_started = true;
+    removeUIElements();
+    for(int i=0; i<concurrent_games; i++){
+        gui::View* v= nullptr;
+        QLabel* ry = nullptr;
+        QLabel* bg = nullptr;
+        if(i < visible_games){
+            v = views[i];
+            addPlayerRow(ry, bg, i+1);
+        }
+        MatchManager* m = new MatchManager(this, v, e1_edit->text(), e2_edit->text(), ry, bg);
+        matchManagers.push_back(m);
+        m->run();
+    }
+    qDebug()<<matchManagers.size();
 }
 
 void StatsView::updateResults(double e1Points, double e2Points){
@@ -606,6 +598,91 @@ void StatsView::updateResults(double e1Points, double e2Points){
     e2Score += e2Points;
     e1Score_label->setText(QString::number(e1Score));
     e2Score_label->setText(QString::number(e2Score));
+}
+
+void StatsView::adjustViewNumbers(int number){
+    if(number == views.size())
+        return;
+    clearGridLayout();
+    views.clear();
+    int rows = std::ceil(std::sqrt(number));
+    for(int r=0; r<rows; r++){
+        for(int c=0; c<rows; c++){
+            if(r*rows+c >= number)break;
+            View* v = new View(r*rows+c+1, gridContainer);
+            views.push_back(v);
+            grid->addWidget(v, r, c);
+        }
+    }
+}
+
+void StatsView::clearGridLayout()
+{
+    QGridLayout* layout = grid;
+    QLayoutItem* item;
+    while ((item = layout->takeAt(0)) != nullptr)
+    {
+        QWidget* widget = item->widget();
+        if (widget)
+            widget->deleteLater();  // delete safely
+
+        delete item;  // delete the QLayoutItem wrapper
+    }
+}
+
+void StatsView::addEditLine(const QString& text, QLineEdit*& edit, int editContent){
+    QGraphicsLinearLayout* row = new QGraphicsLinearLayout(Qt::Horizontal);
+    QWidget* tp = new QLabel(text);
+    uiElements.push_back(tp);
+    row->addItem(scene->addWidget(tp));
+    edit = new QLineEdit(QString::number(editContent));
+    uiElements.push_back(edit);
+    edit->setMaximumWidth(30);
+    row->addItem(scene->addWidget(edit));
+    vLayout->addItem(row);
+}
+
+void StatsView::connectSlots(){
+    connect(concurrencyEdit,  &QLineEdit::editingFinished, this, &StatsView::onConcurrencyEditFinished);
+    connect(visibilityEdit,  &QLineEdit::editingFinished, this, &StatsView::onVisibilityEditFinished);
+}
+
+
+void StatsView::addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber) {
+
+    QGraphicsLinearLayout* RY_row = new QGraphicsLinearLayout(Qt::Horizontal);
+    QGraphicsLinearLayout* BG_row = new QGraphicsLinearLayout(Qt::Horizontal);
+
+
+    RY_label = new QLabel("");
+    BG_label = new QLabel("");
+    QLabel* ry = new QLabel(QString::number(viewNumber)+".  RY: ");
+    ry->setMaximumWidth(30);
+    QLabel* bg = new QLabel("     BG: ");
+    bg->setMaximumWidth(30);
+
+    RY_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    BG_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    ry->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+    bg->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
+
+    RY_row->addItem(scene->addWidget(ry));
+    RY_row->addItem(scene->addWidget(RY_label));
+
+    BG_row->addItem(scene->addWidget(bg));
+    BG_row->addItem(scene->addWidget(BG_label));
+
+    vLayout->addItem(RY_row);
+    vLayout->addItem(BG_row);
+}
+
+void StatsView::removeUIElements(){
+    vLayout->removeAt(3);
+    for(int i=0; i<7; i++)
+        vLayout->removeAt(4);
+    for(QWidget* w : uiElements)
+        w->hide();
+    vLayout->setItemSpacing(3, 30);
 }
 
 }

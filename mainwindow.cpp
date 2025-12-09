@@ -20,19 +20,14 @@ void MainWindow::setup(){
     setCentralWidget(centralWidget);
 
     QHBoxLayout *mainLayout = new QHBoxLayout(centralWidget);
-
     QSplitter *splitter = new QSplitter(Qt::Horizontal, centralWidget);
-
-
-    view = new gui::View(splitter);
 
     statsView = new gui::StatsView(splitter);
 
     matchManager = new MatchManager(statsView, view);
 
-
     splitter->addWidget(statsView);
-    splitter->addWidget(view);
+    splitter->addWidget(statsView->gridContainer);
     splitter->setSizes({400, 600});
 
     mainLayout->addWidget(splitter);
