@@ -11,8 +11,10 @@
 #include <QMessageBox>
 #include <thread>
 #include <bitset>
+#include <cmath>
 #include <sstream>
 #include <QPointer>
+#include <QTextEdit>
 #include "match_manager.h"
 
 
@@ -683,6 +685,81 @@ void StatsView::removeUIElements(){
     for(QWidget* w : uiElements)
         w->hide();
     vLayout->setItemSpacing(3, 30);
+}
+
+void StatsView::displayResults(){
+    QDialog dialog(this);
+    dialog.setWindowTitle("Results");
+
+    QVBoxLayout layout(&dialog);
+    layout.setSpacing(10);
+
+    QHBoxLayout* row1 = new QHBoxLayout;
+    QHBoxLayout* row2 = new QHBoxLayout;
+    QHBoxLayout* row3 = new QHBoxLayout;
+
+    QLabel* titleLabel = new QLabel("Final Score");
+    titleLabel->setStyleSheet("QLabel { font-weight: bold; color: magenta; font-size: 16px; padding: 30px }");
+    QString e1_name = e1_label->text(), e2_name = e2_label->text();
+    if(e1_name == e2_name){
+        e1_name += "_1";
+        e2_name += "_2";
+    }
+
+    QLabel* e1_nameLabel = new QLabel(e1_name);
+    e1_nameLabel->setAlignment(Qt::AlignHCenter);
+    e1_nameLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 23px; }");
+    QLabel* e2_nameLabel = new QLabel(e2_name);
+    e2_nameLabel->setAlignment(Qt::AlignHCenter);
+    e2_nameLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 23px; }");
+
+    row1->addWidget(e1_nameLabel);
+    row1->addWidget(e2_nameLabel);
+
+    QLabel* e1_scoreLabel = new QLabel(QString::number(e1Score));
+    e1_scoreLabel->setAlignment(Qt::AlignHCenter);
+    QLabel* e2_scoreLabel = new QLabel(QString::number(e2Score));
+    e2_scoreLabel->setAlignment(Qt::AlignHCenter);
+
+    if(e1Score > e2Score){
+        e1_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: green; }");
+        e2_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; }");
+    }
+    else if(e1Score == e2Score){
+        e1_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: orange; }");
+        e2_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: orange; }");
+    }
+    else{
+        e1_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; }");
+        e2_scoreLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: green; }");
+    }
+
+    row2->addWidget(e1_scoreLabel);
+    row2->addWidget(e2_scoreLabel);
+
+    double S = e2Score / max_games;
+    double R = 400 * std::log10(S / (1-S));
+    QLabel* tLabel = new QLabel("Estimated Elo gain of " + e2_name + ": ");
+    QLabel* eloLabel = new QLabel(QString::number(R));
+
+    tLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; padding: 30px}");
+    if(R >= 0){
+        eloLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: green; padding: 10px}");
+    }
+    else{
+        eloLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; padding: 10px}");
+    }
+
+    row3->addWidget(tLabel);
+    row3->addWidget(eloLabel);
+
+    layout.addWidget(titleLabel);
+    layout.addLayout(row1);
+    layout.addLayout(row2);
+    layout.addLayout(row3);
+
+    dialog.adjustSize();
+    dialog.exec();
 }
 
 }

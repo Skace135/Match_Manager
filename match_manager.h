@@ -22,6 +22,7 @@ private:
     static std::vector<std::string> s_balancedFens;
     inline static bool s_usedFens[10000]{};
     inline static int s_gamesStarted = 0;
+    inline static int s_gamesEnded = 0;
     inline static bool s_switchSides = false;
     static bool evalsDecisive(int e1Eval, int e2Eval);
     void setup();

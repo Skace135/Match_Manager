@@ -58,6 +58,7 @@ public:
     void addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber);
     int max_games = 100;
     int think_time = 2500;
+    void displayResults();
 
 protected:
     void resizeEvent(QResizeEvent *event);

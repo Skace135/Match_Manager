@@ -189,6 +189,7 @@ void MatchManager::onEngine2Output(const QString& line){
 }
 
 void MatchManager::processResults(int e1Eval, int e2Eval){
+    ++s_gamesEnded;
     if(e1Eval > 0)
         //RY win
         if(!m_switchSides)
@@ -211,9 +212,13 @@ void MatchManager::processResults(int e1Eval, int e2Eval){
     if(s_gamesStarted < m_games){
         startGame();
     }
+    if(s_gamesEnded == m_games){
+        statsView->displayResults();
+    }
 }
 
 void MatchManager::terminateGame(int e1Eval, int e2Eval){
+    ++s_gamesEnded;
     if(std::min(e1Eval, e2Eval) > 500){
         //RY win
         if(!m_switchSides)
@@ -237,6 +242,9 @@ void MatchManager::terminateGame(int e1Eval, int e2Eval){
     }
     if(s_gamesStarted < m_games){
         startGame();
+    }
+    if(s_gamesEnded == m_games){
+        statsView->displayResults();
     }
 }
 
