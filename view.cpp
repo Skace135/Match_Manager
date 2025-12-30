@@ -592,7 +592,6 @@ void StatsView::onMatchButtonClicked(){
         matchManagers.push_back(m);
         m->run();
     }
-    qDebug()<<matchManagers.size();
 }
 
 void StatsView::updateResults(double e1Points, double e2Points){
