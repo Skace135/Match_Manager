@@ -38,6 +38,6 @@ Once all games are finished a window will pop up, displaying the final outcome o
 
 ## What can you do with it?
 
-Nothing as of now, as this project is not yet UCI-compatible.
+Unfortunately nothing as of now, as this project is not yet UCI-compatible.
 
 ---
