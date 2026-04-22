@@ -57,7 +57,7 @@ public:
     void updateGameNumber(int gameNumber);
     void addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber);
     int max_games = 100;
-    int think_time = 2500;
+    int think_time = 100;
     void displayResults();
 
 protected:
@@ -104,7 +104,7 @@ private:
     double e2Score = 0;
     int game_number=0;
     int concurrent_games = 7;
-    int visible_games = 7;
+    int visible_games = 1;
     bool matches_started=false;
 };
 

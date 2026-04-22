@@ -410,7 +410,7 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
 
     fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 
-    adjustViewNumbers(concurrent_games);
+    adjustViewNumbers(std::min(visible_games, concurrent_games));
     connectSlots();
 }
 

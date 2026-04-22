@@ -49,7 +49,7 @@ MatchManager::MatchManager(gui::StatsView* s, gui::View* v, QString e1Path, QStr
     e2_path = e2Path;
 
     e1_name = QFileInfo(e1Path).baseName();
-    e2_name = QFileInfo(e1Path).baseName();
+    e2_name = QFileInfo(e2Path).baseName();
 
     ry_label = ry;
     bg_label = bg;
