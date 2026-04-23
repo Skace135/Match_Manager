@@ -96,15 +96,44 @@ void View::setup(chess::Square board[boardSize][boardSize]){
     }
 }
 
-void View::setupFromFen(const std::string& fen) {
+void View::setupFromFen(const std::string& fen, QString ryName, QString bgName) {
     scene->clear();
 
-    QGraphicsSimpleTextItem* simpleNumber = new QGraphicsSimpleTextItem(QString::number(number));
+    /*QGraphicsSimpleTextItem* simpleNumber = new QGraphicsSimpleTextItem(QString::number(number));
     simpleNumber->setPos(0, 0);
     simpleNumber->setFont(QFont("Arial", 50));
-    simpleNumber->setBrush(Qt::blue);
+    simpleNumber->setBrush(Qt::blue);*/
+    
+    int fontSize = 15;
+    QFont font("Arial", fontSize, QFont::Bold);
+    
+    QGraphicsSimpleTextItem* ryLabel = new QGraphicsSimpleTextItem("RY");
+    ryLabel->setPos(0, (int) (14*squareSize - 1.5*squareSize));
+    ryLabel->setFont(font);
+    ryLabel->setBrush(Qt::red);
+    
+    QGraphicsSimpleTextItem* ryItem = new QGraphicsSimpleTextItem(ryName);
+    ryItem->setPos(0, (int) (14*squareSize - 1.5*squareSize + 2*fontSize));
+    ryItem->setFont(font);
+    ryItem->setBrush(Qt::red);
+    
+    
+    QGraphicsSimpleTextItem* bgItem = new QGraphicsSimpleTextItem(bgName);
+    bgItem->setPos(0, 10 + 2 * fontSize);
+    bgItem->setFont(font);
+    bgItem->setBrush(Qt::blue);
+    
+    QGraphicsSimpleTextItem* bgLabel = new QGraphicsSimpleTextItem("BG");
+    bgLabel->setPos(0, 10);
+    bgLabel->setFont(font);
+    bgLabel->setBrush(Qt::blue);
+        
 
-    scene->addItem(simpleNumber);
+    //scene->addItem(simpleNumber);
+    scene->addItem(ryItem);
+    scene->addItem(ryLabel);
+    scene->addItem(bgItem);
+    scene->addItem(bgLabel);
     for(int i=0; i<4; i++) hl_tiles[i].first = hl_tiles[i].second = nullptr;
 
     std::string header = fen.substr(0,36);
@@ -533,7 +562,8 @@ void StatsView::onVisibilityEditFinished(){
 
 
 void StatsView::on_e1ButtonClicked(){
-    QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    //QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    QString path = QFileDialog::getOpenFileName(this, "Open a file", "C:\\Users/Leon/Kugel_Versions/", "executable files (*.exe)");
     QFile file(path);
     if(!file.open(QIODevice::ReadOnly)){
         QMessageBox::critical(this, "Error", file.errorString());
@@ -552,7 +582,8 @@ void StatsView::on_e1ButtonClicked(){
 }
 
 void StatsView::on_e2ButtonClicked(){
-    QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    //QString path = QFileDialog::getOpenFileName(this, "Open a file", "D:\\Kugel_Versions", "executable files (*.exe)");
+    QString path = QFileDialog::getOpenFileName(this, "Open a file", "C:\\Users/Leon/Kugel_Versions/", "executable files (*.exe)");
     QFile file(path);
     if(!file.open(QIODevice::ReadOnly)){
         QMessageBox::critical(this, "Error", file.errorString());
@@ -579,7 +610,7 @@ void StatsView::onMatchButtonClicked(){
         return;
     }
     matches_started = true;
-    removeUIElements();
+    //removeUIElements();
     for(int i=0; i<concurrent_games; i++){
         gui::View* v= nullptr;
         QLabel* ry = nullptr;

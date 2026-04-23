@@ -104,7 +104,23 @@ void MatchManager::run(){
 
 void MatchManager::startGame(){
     std::string startPos = getRandomFen();
-    if(view) view->setupFromFen(startPos);
+    
+    m_switchSides = s_switchSides;
+    s_switchSides = !s_switchSides;
+    if(view){
+        if(m_switchSides){
+            ry_label->setText(e2_name);
+            bg_label->setText(e1_name);
+            view->setupFromFen(startPos, e2_name, e1_name);
+        }
+        else{
+            ry_label->setText(e1_name);
+            bg_label->setText(e2_name);
+            view->setupFromFen(startPos, e1_name, e2_name);
+        }
+    }
+    
+    //if(view) view->setupFromFen(startPos);
     std::string command = "Pos " + startPos;
     e1->send(QString::fromStdString(command));
     e2->send(QString::fromStdString(command));
@@ -113,18 +129,6 @@ void MatchManager::startGame(){
     m_e1Eval = 0;
     m_e2Eval = 0;
     s_gamesStarted++;
-    m_switchSides = s_switchSides;
-    s_switchSides = !s_switchSides;
-    if(view){
-        if(m_switchSides){
-            ry_label->setText(e2_name);
-            bg_label->setText(e1_name);
-        }
-        else{
-            ry_label->setText(e1_name);
-            bg_label->setText(e2_name);
-        }
-    }
 
     statsView->updateGameNumber(s_gamesStarted);
 
@@ -142,7 +146,7 @@ std::string MatchManager::getRandomFen(){
 
 void MatchManager::testFen(){
     std::string startPos = getRandomFen();
-    if(view) view->setupFromFen(startPos);
+    if(view) view->setupFromFen(startPos, "", "");
 }
 
 void MatchManager::onEngine1Output(const QString& line){

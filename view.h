@@ -26,7 +26,7 @@ public:
     void playMove(chess::Move move);
     std::pair<Tile*, Tile*> hl_tiles[4];
     void displayLogicalBoard();
-    void setupFromFen(const std::string& fen);
+    void setupFromFen(const std::string& fen, QString ryName, QString bgName);
     void movePieces(chess::Move move);
 
 protected:
