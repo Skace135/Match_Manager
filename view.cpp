@@ -696,7 +696,9 @@ void StatsView::displayResults(){
     QHBoxLayout* row1 = new QHBoxLayout;
     QHBoxLayout* row2 = new QHBoxLayout;
     QHBoxLayout* row3 = new QHBoxLayout;
-
+    QHBoxLayout* row4 = new QHBoxLayout;
+    QHBoxLayout* row5 = new QHBoxLayout;
+            
     QLabel* titleLabel = new QLabel("Final Score");
     titleLabel->setStyleSheet("QLabel { font-weight: bold; color: magenta; font-size: 16px; padding: 30px }");
     QString e1_name = e1_label->text(), e2_name = e2_label->text();
@@ -751,11 +753,33 @@ void StatsView::displayResults(){
 
     row3->addWidget(tLabel);
     row3->addWidget(eloLabel);
+    
+    QLabel* row4Label = new QLabel("Illegal (Null) moves: ");
+    QLabel* illegalLabel = new QLabel(QString::number(num_illegal));
+    
+    row4Label->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; padding: 10px 30px}");
+    if(num_illegal == 0)
+        illegalLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: green; padding: 10px}");
+    else 
+        illegalLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: red; padding: 10px}");
+    row4->addWidget(row4Label);
+    row4->addWidget(illegalLabel);
+    
+    QLabel* row5Label = new QLabel("Average moves per game: ");
+    QLabel* moveLabel = new QLabel(QString::number((double)move_sum / max_games));
+    
+    row5Label->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; padding: 10px 30px}");
+    moveLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 20px; color: blue; padding: 10px}");
+    
+    row5->addWidget(row5Label);
+    row5->addWidget(moveLabel);
 
     layout.addWidget(titleLabel);
     layout.addLayout(row1);
     layout.addLayout(row2);
     layout.addLayout(row3);
+    layout.addLayout(row4);
+    layout.addLayout(row5);
 
     dialog.adjustSize();
     dialog.exec();

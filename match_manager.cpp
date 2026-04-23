@@ -15,6 +15,7 @@
 
 int decisiveEval = 1400;
 constexpr int maxMoveCount = 300;
+const chess::Move NULL_MOVE = chess::Move();
 
 std::vector<std::string> MatchManager::s_balancedFens;
 
@@ -153,7 +154,14 @@ void MatchManager::onEngine1Output(const QString& line){
     e2->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(view) view->playMove(m);
+    if(view) {
+        if(m != NULL_MOVE) view->playMove(m);
+        else {
+            statsView->num_illegal++;
+            terminateGame(m_e1Eval, m_e2Eval);
+            return;
+        }
+    }
     if(evalsDecisive(m_e1Eval, m_e2Eval)){
         processResults(m_e1Eval, m_e2Eval);
         return;
@@ -175,7 +183,14 @@ void MatchManager::onEngine2Output(const QString& line){
     e1->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(view) view->playMove(m);
+    if(view) {
+        if(m != NULL_MOVE) view->playMove(m);
+        else {
+            statsView->num_illegal++;
+            terminateGame(m_e1Eval, m_e2Eval);
+            return;
+        }
+    }
     if(evalsDecisive(m_e1Eval, m_e2Eval)){
         processResults(m_e1Eval, m_e2Eval);
         return;
@@ -190,6 +205,7 @@ void MatchManager::onEngine2Output(const QString& line){
 
 void MatchManager::processResults(int e1Eval, int e2Eval){
     ++s_gamesEnded;
+    statsView->move_sum += m_moveCount;
     if(e1Eval > 0)
         //RY win
         if(!m_switchSides)
@@ -219,6 +235,7 @@ void MatchManager::processResults(int e1Eval, int e2Eval){
 
 void MatchManager::terminateGame(int e1Eval, int e2Eval){
     ++s_gamesEnded;
+    statsView->move_sum += m_moveCount;
     if(std::min(e1Eval, e2Eval) > 500){
         //RY win
         if(!m_switchSides)

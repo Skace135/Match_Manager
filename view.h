@@ -58,6 +58,8 @@ public:
     void addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber);
     int max_games = 100;
     int think_time = 100;
+    int move_sum = 0;
+    int num_illegal = 0;
     void displayResults();
 
 protected:

@@ -3,6 +3,7 @@
 
 #include "view.h"
 #include "engineProcess.h"
+#include <QElapsedTimer>
 
 
 class MatchManager : public QObject {
