@@ -56,6 +56,7 @@ public:
     void updateResults(double e1Points, double e2Points);
     void updateGameNumber(int gameNumber);
     void addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber);
+    void enableUI(bool enabled);
     int max_games = 100;
     int think_time = 100;
     int move_sum = 0;
@@ -84,6 +85,7 @@ private:
     void addEditLine(const QString& text, QLineEdit*& edit, int editContent);
     void connectSlots();
     void removeUIElements();
+    void resetStats();
     std::vector<QWidget*> uiElements;
     QGraphicsScene *scene;
     QGraphicsLinearLayout* vLayout;
@@ -107,7 +109,6 @@ private:
     int game_number=0;
     int concurrent_games = 7;
     int visible_games = 1;
-    bool matches_started=false;
 };
 
 }

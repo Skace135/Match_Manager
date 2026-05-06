@@ -428,7 +428,7 @@ StatsView::StatsView(QWidget *parent) : QGraphicsView(parent) {
     addMatchupRows();
     vLayout->addItem(scoreRow);
     addMatchButtonRow();
-    vLayout->setItemSpacing(3, 30);
+    vLayout->setItemSpacing(4, 30);
     vLayout->addItem(gameNumRow);
     vLayout->setItemSpacing(0, 20);
     vLayout->addItem(timeRow);
@@ -606,20 +606,16 @@ void StatsView::onMatchButtonClicked(){
         QMessageBox::critical(this, "Error", "Engines not loaded");
         return;
     }
-    if(matches_started){
-        return;
-    }
-    matches_started = true;
     //removeUIElements();
+    enableUI(false);
     for(int i=0; i<concurrent_games; i++){
         gui::View* v= nullptr;
         QLabel* ry = nullptr;
         QLabel* bg = nullptr;
         if(i < visible_games){
             v = views[i];
-            addPlayerRow(ry, bg, i+1);
         }
-        MatchManager* m = new MatchManager(this, v, e1_edit->text(), e2_edit->text(), ry, bg);
+        MatchManager* m = new MatchManager(this, v, e1_edit->text(), e2_edit->text());
         matchManagers.push_back(m);
         m->run();
     }
@@ -679,35 +675,6 @@ void StatsView::connectSlots(){
     connect(visibilityEdit,  &QLineEdit::editingFinished, this, &StatsView::onVisibilityEditFinished);
 }
 
-
-void StatsView::addPlayerRow(QLabel*& RY_label, QLabel*& BG_label, int viewNumber) {
-
-    QGraphicsLinearLayout* RY_row = new QGraphicsLinearLayout(Qt::Horizontal);
-    QGraphicsLinearLayout* BG_row = new QGraphicsLinearLayout(Qt::Horizontal);
-
-
-    RY_label = new QLabel("");
-    BG_label = new QLabel("");
-    QLabel* ry = new QLabel(QString::number(viewNumber)+".  RY: ");
-    ry->setMaximumWidth(30);
-    QLabel* bg = new QLabel("     BG: ");
-    bg->setMaximumWidth(30);
-
-    RY_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    BG_label->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    ry->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-    bg->setStyleSheet("QLabel { font-weight: bold; font-size: 10px; padding: 0px; }");
-
-    RY_row->addItem(scene->addWidget(ry));
-    RY_row->addItem(scene->addWidget(RY_label));
-
-    BG_row->addItem(scene->addWidget(bg));
-    BG_row->addItem(scene->addWidget(BG_label));
-
-    vLayout->addItem(RY_row);
-    vLayout->addItem(BG_row);
-}
-
 void StatsView::removeUIElements(){
     vLayout->removeAt(3);
     for(int i=0; i<7; i++)
@@ -715,6 +682,20 @@ void StatsView::removeUIElements(){
     for(QWidget* w : uiElements)
         w->hide();
     vLayout->setItemSpacing(3, 30);
+}
+
+void StatsView::resetStats(){
+    e1Score = 0;
+    e2Score = 0;
+    e1Score_label->setText(QString::number(e1Score));
+    e2Score_label->setText(QString::number(e2Score));
+    game_number = 0;
+    gameNumber_label->setText(QString::number(game_number));
+}
+
+void StatsView::enableUI(bool enabled){
+    for(QWidget* w : uiElements)
+        w->setEnabled(enabled);
 }
 
 void StatsView::displayResults(){
@@ -814,6 +795,9 @@ void StatsView::displayResults(){
 
     dialog.adjustSize();
     dialog.exec();
+    
+    resetStats();
+    enableUI(true);
 }
 
 }

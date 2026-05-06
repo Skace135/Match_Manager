@@ -11,7 +11,7 @@ class MatchManager : public QObject {
 public:
     MatchManager(gui::StatsView* s, gui::View* v, QObject* parent=nullptr);
     MatchManager(gui::StatsView* s, gui::View* v, QString e1Path, QString e2Path,
-                 QLabel* ry, QLabel* bg, QObject* parent=nullptr);
+                 QObject* parent=nullptr);
     void run();
     QString e1_path;
     QString e2_path;
@@ -31,10 +31,9 @@ private:
     void onEngine2Output(const QString& line);
     void processResults(int e1Eval, int e2Eval);
     void terminateGame(int e1Eval, int e2Eval);
+    void terminate();
     gui::StatsView* statsView;
     gui::View* view;
-    QLabel* ry_label;
-    QLabel* bg_label;
     EngineProcess* e1;
     EngineProcess* e2;
     QElapsedTimer timer;

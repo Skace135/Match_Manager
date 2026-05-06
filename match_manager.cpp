@@ -13,6 +13,8 @@
  * Go: start search
  */
 
+//TODO: make games clickable
+
 int decisiveEval = 1400;
 constexpr int maxMoveCount = 300;
 const chess::Move NULL_MOVE = chess::Move();
@@ -42,7 +44,7 @@ MatchManager::MatchManager(gui::StatsView* s, gui::View* v, QObject* parent) : Q
 }
 
 MatchManager::MatchManager(gui::StatsView* s, gui::View* v, QString e1Path, QString e2Path,
-                           QLabel* ry, QLabel* bg, QObject* parent) : QObject(parent){
+                           QObject* parent) : QObject(parent){
     statsView = s;
     view = v;
 
@@ -51,9 +53,6 @@ MatchManager::MatchManager(gui::StatsView* s, gui::View* v, QString e1Path, QStr
 
     e1_name = QFileInfo(e1Path).baseName();
     e2_name = QFileInfo(e2Path).baseName();
-
-    ry_label = ry;
-    bg_label = bg;
 
     setup();
 }
@@ -109,13 +108,9 @@ void MatchManager::startGame(){
     s_switchSides = !s_switchSides;
     if(view){
         if(m_switchSides){
-            ry_label->setText(e2_name);
-            bg_label->setText(e1_name);
             view->setupFromFen(startPos, e2_name, e1_name);
         }
         else{
-            ry_label->setText(e1_name);
-            bg_label->setText(e2_name);
             view->setupFromFen(startPos, e1_name, e2_name);
         }
     }
@@ -155,17 +150,15 @@ void MatchManager::onEngine1Output(const QString& line){
     auto r = split(line.toStdString());
     m_moveCount++;
     m_e1Eval = std::stoi(r[5]);
-    e2->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(view) {
-        if(m != NULL_MOVE) view->playMove(m);
-        else {
-            statsView->num_illegal++;
-            terminateGame(m_e1Eval, m_e2Eval);
-            return;
-        }
+    if(m == NULL_MOVE) {
+        statsView->num_illegal++;
+        terminateGame(m_e1Eval, m_e2Eval);
+        return;
     }
+    e2->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
+    if(view) view->playMove(m);
     if(evalsDecisive(m_e1Eval, m_e2Eval)){
         processResults(m_e1Eval, m_e2Eval);
         return;
@@ -184,17 +177,15 @@ void MatchManager::onEngine2Output(const QString& line){
     auto r = split(line.toStdString());
     m_moveCount++;
     m_e2Eval = std::stoi(r[5]);
-    e1->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(view) {
-        if(m != NULL_MOVE) view->playMove(m);
-        else {
-            statsView->num_illegal++;
-            terminateGame(m_e1Eval, m_e2Eval);
-            return;
-        }
+    if(m == NULL_MOVE) {
+        statsView->num_illegal++;
+        terminateGame(m_e1Eval, m_e2Eval);
+        return;
     }
+    e1->send(QString::fromStdString("Move "+r[0]+" "+r[1]+" "+r[2]+" "+r[3]+" "+r[4]));
+    if(view) view->playMove(m);
     if(evalsDecisive(m_e1Eval, m_e2Eval)){
         processResults(m_e1Eval, m_e2Eval);
         return;
@@ -233,7 +224,7 @@ void MatchManager::processResults(int e1Eval, int e2Eval){
         startGame();
     }
     if(s_gamesEnded == m_games){
-        statsView->displayResults();
+        terminate();
     }
 }
 
@@ -265,8 +256,15 @@ void MatchManager::terminateGame(int e1Eval, int e2Eval){
         startGame();
     }
     if(s_gamesEnded == m_games){
-        statsView->displayResults();
+       terminate();
     }
+}
+
+void MatchManager::terminate(){
+    s_gamesEnded = 0;
+    s_gamesStarted = 0;
+    std::fill(std::begin(s_usedFens), std::end(s_usedFens), false);
+    statsView->displayResults();
 }
 
 bool MatchManager::evalsDecisive(int e1Eval, int e2Eval){
