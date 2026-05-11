@@ -691,6 +691,7 @@ void StatsView::resetStats(){
     e2Score_label->setText(QString::number(e2Score));
     game_number = 0;
     gameNumber_label->setText(QString::number(game_number));
+    move_sum = 0;
 }
 
 void StatsView::enableUI(bool enabled){
