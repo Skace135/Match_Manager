@@ -607,6 +607,8 @@ void StatsView::onMatchButtonClicked(){
         return;
     }
     //removeUIElements();
+    e1Score_label->setText(QString::number(e1Score));
+    e2Score_label->setText(QString::number(e2Score));
     enableUI(false);
     for(int i=0; i<concurrent_games; i++){
         gui::View* v= nullptr;
@@ -687,8 +689,6 @@ void StatsView::removeUIElements(){
 void StatsView::resetStats(){
     e1Score = 0;
     e2Score = 0;
-    e1Score_label->setText(QString::number(e1Score));
-    e2Score_label->setText(QString::number(e2Score));
     game_number = 0;
     gameNumber_label->setText(QString::number(game_number));
     move_sum = 0;
