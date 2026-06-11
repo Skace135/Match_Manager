@@ -143,6 +143,10 @@ void MatchManager::testFen(){
     if(view) view->setupFromFen(startPos, "", "");
 }
 
+void MatchManager::stop(){
+    //TODO write some stop code once uci is implemented
+}
+
 void MatchManager::onEngine1Output(const QString& line){
     qint64 ms = timer.elapsed();
     qDebug("Elapsed time: %llims", ms);

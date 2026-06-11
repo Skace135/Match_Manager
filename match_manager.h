@@ -18,6 +18,7 @@ public:
     QString e1_name;
     QString e2_name;
     void testFen();
+    void stop();
 
 private:
     static std::vector<std::string> s_balancedFens;

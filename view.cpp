@@ -692,6 +692,9 @@ void StatsView::resetStats(){
     game_number = 0;
     gameNumber_label->setText(QString::number(game_number));
     move_sum = 0;
+    for(MatchManager* m : matchManagers)
+        m->stop();
+    matchManagers.clear();
 }
 
 void StatsView::enableUI(bool enabled){
