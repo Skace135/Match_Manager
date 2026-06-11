@@ -24,7 +24,6 @@ private:
     inline static bool s_usedFens[10000]{};
     inline static int s_gamesStarted = 0;
     inline static int s_gamesEnded = 0;
-    inline static bool s_switchSides = false;
     static bool evalsDecisive(int e1Eval, int e2Eval);
     void setup();
     void onEngine1Output(const QString& line);
@@ -38,13 +37,14 @@ private:
     EngineProcess* e2;
     QElapsedTimer timer;
     bool m_running = false;
-    bool m_switchSides;
+    bool m_switchSides = false;
     int m_moveCount;
     int m_e1Eval;
     int m_e2Eval;
     int m_games;
     void startGame();
     std::string getRandomFen();
+    std::string startPos;
 
 };
 

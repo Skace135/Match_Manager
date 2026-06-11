@@ -102,10 +102,9 @@ void MatchManager::run(){
 }
 
 void MatchManager::startGame(){
-    std::string startPos = getRandomFen();
+    if(!m_switchSides)
+        startPos = getRandomFen();
     
-    m_switchSides = s_switchSides;
-    s_switchSides = !s_switchSides;
     if(view){
         if(m_switchSides){
             view->setupFromFen(startPos, e2_name, e1_name);
@@ -219,6 +218,8 @@ void MatchManager::processResults(int e1Eval, int e2Eval){
             statsView->updateResults(1, 0);
     else if(e1Eval == 0)
         statsView->updateResults(0.5, 0.5);
+    
+    m_switchSides = !m_switchSides;
 
     if(s_gamesStarted < m_games){
         startGame();
@@ -252,6 +253,9 @@ void MatchManager::terminateGame(int e1Eval, int e2Eval){
     else{
         statsView->updateResults(0.5, 0.5);
     }
+    
+    m_switchSides = !m_switchSides;
+    
     if(s_gamesStarted < m_games){
         startGame();
     }
