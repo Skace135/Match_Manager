@@ -155,8 +155,9 @@ void MatchManager::onEngine1Output(const QString& line){
     m_e1Eval = std::stoi(r[5]);
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(m == NULL_MOVE) {
-        statsView->num_illegal++;
+    if((r.size()>6 && r[6]=="true") || m == NULL_MOVE) {    //No legal moves, m==NULL_MOVE is for legacy versions
+        //statsView->num_illegal++;
+        //qDebug("NULL_MOVE!! Stalemate: %s", r[6].c_str());
         terminateGame(m_e1Eval, m_e2Eval);
         return;
     }
@@ -182,8 +183,9 @@ void MatchManager::onEngine2Output(const QString& line){
     m_e2Eval = std::stoi(r[5]);
     chess::Move m = chess::Move(std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]), std::stoi(r[3]), std::stoi(r[4]));
     qDebug("Move from: %i %i to: %i %i,  Evaluations: e1: %i, e2: %i, Move: %i",std::stoi(r[0]), std::stoi(r[1]), std::stoi(r[2]),std::stoi(r[3]), m_e1Eval, m_e2Eval, m_moveCount);
-    if(m == NULL_MOVE) {
-        statsView->num_illegal++;
+    if((r.size()>6 && r[6]=="true") || m == NULL_MOVE) {    //No legal moves, m==NULL_MOVE is for legacy versions
+        //statsView->num_illegal++;
+        //qDebug("NULL_MOVE!! Stalemate: %s", r[6].c_str());
         terminateGame(m_e1Eval, m_e2Eval);
         return;
     }
